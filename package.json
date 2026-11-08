@@ -1,0 +1,35 @@
+{
+  "name": "fillico-store",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "tsx server/index.ts",
+    "build": "tsc --noEmit && vite build",
+    "start": "node server/start.mjs",
+    "test": "tsx --test server/*.test.ts",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource/be-vietnam-pro": "5.2.7",
+    "express": "5.1.0",
+    "lucide-react": "0.468.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-router-dom": "7.6.0",
+    "tsx": "4.20.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.0",
+    "@types/express": "5.0.3",
+    "@types/node": "24.0.0",
+    "@types/react": "19.1.0",
+    "@types/react-dom": "19.1.0",
+    "@vitejs/plugin-react": "4.5.0",
+    "typescript": "5.8.3",
+    "vite": "6.3.5"
+  }
+}
