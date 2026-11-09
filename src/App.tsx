@@ -17,7 +17,7 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json', ...options?.headers } });
   const data = await res.json(); if (!res.ok) throw new Error(data.error || data.message || 'Không thể xử lý yêu cầu. Vui lòng thử lại.'); return data;
 }
-function Logo() { return <Link className="brand" to="/" aria-label="Trang chủ"><img className="brand-logo" src="/images/fillico-logo.png" alt="Fillico"/></Link>; }
+function Logo() { return <Link className="brand" to="/" aria-label="Trang chủ"><img className="brand-logo" src="/images/fillico-logo-green.png" alt="Fillico"/></Link>; }
 function Modal({ children, close, title, drawer = false }: { children: ReactNode; close: () => void; title: string; drawer?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => { const d = ref.current!; d.showModal(); const prev = document.body.style.overflow; document.body.style.overflow = 'hidden'; return () => { d.close(); document.body.style.overflow = prev; }; }, []);
