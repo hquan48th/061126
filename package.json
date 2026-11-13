@@ -11,7 +11,12 @@
     "build": "tsc --noEmit && vite build",
     "start": "node server/start.mjs",
     "test": "tsx --test server/*.test.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:hosting": "npm run build && tsx tools/build-hosting.mjs",
+    "test:php:setup": "node tools/start-php-tests.mjs",
+    "test:php": "tsx tools/test-php.ts",
+    "test:php:api": "tsx tools/test-php.ts api",
+    "test:php:browser": "tsx tools/test-php.ts browser"
   },
   "dependencies": {
     "@fontsource/be-vietnam-pro": "5.2.7",

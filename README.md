@@ -1,5 +1,21 @@
 # Fillico — website bán hàng và quản trị cửa hàng
 
+## Bản chuyển đổi PHP/MySQL cho shared hosting
+
+Backend PHP nằm ở `php/`; React và API/JSON giữ theo commit nguồn. Bản Node trong `server/` được giữ làm tham chiếu. Không có thay đổi production, DNS, push hoặc PR trong bản bàn giao.
+
+- [Cài đặt P.A Việt Nam, di chuyển, sao lưu, cập nhật](docs/HUONG-DAN.md)
+- [Khảo sát nguồn và tiêu chí](docs/KHAO-SAT.md)
+- [Checklist đối chiếu chức năng](docs/CHECKLIST.md)
+- [Kết quả kiểm thử và giới hạn](docs/KIEM-THU.md)
+- [Kiến trúc, mật khẩu cũ và hướng mở rộng](docs/KIEN-TRUC.md)
+
+`npm run build:hosting` tạo `work/hosting` gồm `public_html` và `fillico-private` cùng cấp. Thư mục đích phải mới. Hosting không cần Node/Composer/Docker. Runtime yêu cầu PHP 8.3+ có Argon2id, pdo_mysql, mbstring, JSON, fileinfo; MySQL 8.0.16+ hoặc MariaDB 10.6+, InnoDB/utf8mb4.
+
+Trên máy phát triển có Docker: `npm run build`, `npm run test:php:setup`, `npm run test:php`. Công cụ `tools/sqlite-to-mysql.mjs` chỉ đọc dữ liệu nguồn, tạo snapshot và SQL/đối chiếu vào thư mục riêng. Không coi clone GitHub là có `.local`. Mật khẩu scrypt cũ cần reset offline; đọc hướng dẫn trước khi nhập dữ liệu.
+
+Phần dưới đây giữ lại hướng dẫn của backend Node để tham chiếu; không dùng cách chạy Node này trên hosting PHP.
+
 Website tiếng Việt dành cho một cửa hàng, gồm giao diện mua sắm và trang `/admin` cho chủ shop/nhân viên. React + TypeScript + Vite chạy cùng máy chủ Express; dữ liệu lưu bền vững trong SQLite của Node.js.
 
 ## Chạy trên máy phát triển

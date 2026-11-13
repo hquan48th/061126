@@ -18,7 +18,7 @@ export default defineConfig({
   outputDir: 'test-results/browser',
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://127.0.0.1:3100',
+    baseURL: process.env.FILLICO_TEST_BACKEND === 'php' ? 'http://127.0.0.1:3101' : 'http://127.0.0.1:3100',
     browserName: 'chromium',
     viewport: { width: 1440, height: 1000 },
     locale: 'vi-VN',
@@ -30,7 +30,7 @@ export default defineConfig({
       args: ['--no-sandbox', '--disable-dev-shm-usage'],
     },
   },
-  webServer: {
+  webServer: process.env.FILLICO_TEST_BACKEND === 'php' ? undefined : {
     command: 'npm run dev',
     url: 'http://127.0.0.1:3100/api/store',
     reuseExistingServer: false,

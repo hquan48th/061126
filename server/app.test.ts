@@ -7,6 +7,7 @@ import { once } from 'node:events';
 import { createApp } from './app.js';
 import { Store, verifyPassword } from './store.js';
 import type { Order, Product, Settings } from '../shared/types.js';
+import { phpBackend } from '../tools/php-fixture.js';
 
 const ownerEmail = 'admin@fillico.local';
 const ownerPassword = 'TestPassword2026!';
@@ -21,18 +22,25 @@ type StoreResponse = { products: Product[]; settings: Settings };
 type OrderResponse = { order: Order; trackingToken: string };
 
 async function fixture(t: TestContext) {
-  const dataDir = await mkdtemp(join(tmpdir(), 'fillico-api-test-'));
+  let base: string, dataDir: string;
+  if (process.env.FILLICO_TEST_BACKEND === 'php') {
+    const backend = await phpBackend();
+    base = backend.base; dataDir = backend.dataDir;
+    t.after(backend.close);
+  } else {
+  dataDir = await mkdtemp(join(tmpdir(), 'fillico-api-test-'));
   const instance = await createApp({ dataDir, adminPassword: ownerPassword, serveFrontend: false });
   const server = instance.app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const address = server.address();
   assert.ok(address && typeof address === 'object');
-  const base = `http://127.0.0.1:${address.port}`;
+  base = `http://127.0.0.1:${address.port}`;
   t.after(async () => {
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
     await instance.close();
     await rm(dataDir, { recursive: true, force: true });
   });
+  }
   async function request(path: string, options: { method?: string; body?: unknown; cookie?: string; headers?: Record<string, string> } = {}) {
     const headers: Record<string, string> = { ...options.headers };
     if (options.body !== undefined) headers['Content-Type'] = 'application/json';
@@ -392,7 +400,7 @@ test('paid orders require cancellation before refund and cancelled unpaid orders
   assert.equal((await api.request(unpaidPath, { method: 'PATCH', cookie, body: { paymentStatus: 'paid' } })).status, 400);
 });
 
-test('SQLite persists stock and configuration across restarts and initial credentials are generated only once', async t => {
+test('SQLite persists stock and configuration across restarts and initial credentials are generated only once', { skip: process.env.FILLICO_TEST_BACKEND === 'php' ? 'SQLite baseline only; PHP persistence verified separately' : false }, async t => {
   const dir = await mkdtemp(join(tmpdir(), 'fillico-persistence-test-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const first = new Store(dir);
@@ -446,6 +454,8 @@ test('checkout rejects a changed total without reserving stock', async t => {
 test('private development data paths are blocked before static middleware', async t => {
   const api = await fixture(t);
   for (const path of ['/.local/admin-credentials.txt', '/.local/store.sqlite', '/@fs/tmp/store.sqlite']) {
-    assert.equal((await api.request(path)).status, 404);
+    const response = await api.request(path);
+    if (process.env.FILLICO_TEST_BACKEND === 'php') assert.ok([403,404].includes(response.status));
+    else assert.equal(response.status, 404);
   }
 });

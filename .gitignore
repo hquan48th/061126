@@ -7,3 +7,7 @@ dist/
 test-results/
 playwright-report/
 *.log
+work/
+php/config.php
+php/uploads/
+php/setup.lock

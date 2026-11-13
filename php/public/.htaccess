@@ -1,0 +1,17 @@
+Options -Indexes -MultiViews
+DirectoryIndex index.html
+<IfModule mod_headers.c>
+ Header always set X-Content-Type-Options "nosniff"
+ Header always set X-Frame-Options "DENY"
+ Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+RewriteEngine On
+# Never expose source, dotfiles, configuration, dumps or backup artifacts.
+RewriteRule (^|/)(\.|fillico-private(?:/|$)|node_modules(?:/|$)|server(?:/|$)|tools(?:/|$)|tests(?:/|$)|shared(?:/|$)|src(?:/|$)) - [F,L,NC]
+RewriteRule \.(?:sql|sqlite|db|log|bak|zip|env|ini|txt~|php~)$ - [F,L,NC]
+RewriteRule ^(?:api(?:/|$)|uploads(?:/|$)) index.php [END,QSA]
+RewriteRule ^(?:index|setup)\.php$ - [END]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [END]
+RewriteRule ^ index.html [END]
