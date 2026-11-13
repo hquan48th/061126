@@ -348,7 +348,7 @@ test('banner and company settings persist and bank checkout requires configured 
 test('image uploads validate content and cannot be used by staff', async t => {
   const api = await fixture(t);
   const cookie = await api.login();
-  const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
+  const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', 'base64');
   const response = await fetch(`${api.base}/api/admin/uploads`, { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'image/png' }, body: image });
   assert.equal(response.status, 201);
   const { url } = await response.json() as { url: string };

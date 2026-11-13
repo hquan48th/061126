@@ -190,6 +190,7 @@ test('owner adds a staff account and staff can only access order management', as
   await dialog.getByRole('button', { name: 'Tạo tài khoản', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Đăng nhập', exact: true })).toBeVisible();
   await login(page, credentials);
   await expect(page.getByRole('heading', { level: 1, name: 'Đơn hàng', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sản phẩm & kho', exact: true })).toHaveCount(0);
@@ -208,6 +209,7 @@ test('owner adds a staff account and staff can only access order management', as
   expect((await page.request.get('/api/auth/me')).status()).toBe(401);
   await login(page, { ...credentials, password: updatedPassword });
   await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Đăng nhập', exact: true })).toBeVisible();
   await login(page);
   await page.getByRole('button', { name: 'Nhân viên', exact: true }).click();
   await page.getByRole('row').filter({ hasText: credentials.email }).getByRole('button', { name: 'Thu hồi quyền', exact: true }).click();
@@ -238,4 +240,29 @@ test('mobile navigation, product and cart work without horizontal overflow', asy
   await page.getByRole('link', { name: 'Tiến hành đặt hàng' }).click();
   await expect(page.getByRole('heading', { name: 'Hoàn tất đơn hàng.' })).toBeVisible();
   await expectNoOverflow(page);
+});
+
+
+test('lost committed checkout response survives reload with one order and stock decrement',async({page})=>{
+ const before=await getStore(page);const product=before.products.find(p=>p.slug==='ban-chai-tre')!;const variant=product.variants[0];
+ await page.goto('/san-pham/'+product.slug);await page.getByRole('button',{name:'Thêm vào giỏ',exact:true}).click();await page.goto('/thanh-toan');
+ await page.getByLabel(/Họ và tên/).fill('Khách thử mất phản hồi');await page.getByLabel(/Số điện thoại/).fill('0901234567');await page.getByLabel(/Địa chỉ nhận hàng/).fill('123 Nguyễn Trãi Thành phố Hồ Chí Minh');await page.getByLabel(/Tôi đồng ý/).check();
+ let first:any,key:string|undefined;
+ await page.route('**/api/orders',async route=>{key=route.request().headers()['idempotency-key'];const response=await route.fetch();first=await response.json();await route.abort('failed');},{times:1});
+ await page.getByRole('button',{name:/^Đặt hàng ·/}).click();await expect(page.getByRole('alert')).toBeVisible();await page.reload();
+ await expect(page.getByLabel(/Họ và tên/)).toHaveValue('Khách thử mất phản hồi');await page.getByLabel(/Tôi đồng ý/).check();
+ const responsePromise=page.waitForResponse(r=>r.url().endsWith('/api/orders')&&r.request().method()==='POST');await page.getByRole('button',{name:/^Đặt hàng ·/}).click();const response=await responsePromise;
+ expect(response.request().headers()['idempotency-key']).toBe(key);expect((await response.json()).order.id).toBe(first.order.id);
+ await expect(page.getByText('Đặt hàng thành công!',{exact:true})).toBeVisible();expect(await page.evaluate(()=>sessionStorage.getItem('fillico-pending-checkout-v1'))).toBeNull();
+ const after=await getStore(page);expect(after.products.find(p=>p.id===product.id)!.variants[0].stock).toBe(variant.stock-1);
+});
+
+
+test('expired uncertain checkout purges customer data and requires explicit new attempt',async({page})=>{
+ await page.goto('/');await page.evaluate(()=>{localStorage.setItem('fillico-cart',JSON.stringify([{variantId:'v1-1',quantity:1}]));sessionStorage.setItem('fillico-pending-checkout-v1',JSON.stringify({key:'expired-uncertain',createdAt:Date.now()-31*60*1000,body:{customer:{name:'Private old name',address:'Private old address'}}}));});
+ await page.goto('/thanh-toan');
+ expect(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('fillico-pending-checkout-v1')!).body)).toBeNull();
+ await expect(page.getByRole('button',{name:'Đã kiểm tra, bắt đầu lần đặt hàng mới'})).toBeVisible();
+ page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Đã kiểm tra, bắt đầu lần đặt hàng mới'}).click();
+ expect(await page.evaluate(()=>sessionStorage.getItem('fillico-pending-checkout-v1'))).toBeNull();
 });

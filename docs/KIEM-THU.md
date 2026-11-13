@@ -56,3 +56,21 @@ Kiểm thử layout dùng Apache TLS riêng, private nằm trong document root v
 - Chưa xây CRM/Excel. Kiến trúc và hướng thêm bảng/chỉ mục/batch nằm trong KIEN-TRUC.md.
 
 Đọc danh sách cần xác nhận với nhà cung cấp ở mục 1 HUONG-DAN.md. Không có hoạt động sửa DNS, mua dịch vụ, push/PR hay ghi production trong phiên này.
+
+## Audit regression run, 2026-11-13
+
+Checkpoint 3df6e1a preserves the reviewed implementation. Against its running PHP files, the new regression subtests failed as expected for HEAD (404 vs 200), variant ID "0" (UUID replacement), truncated PNG (201 vs 400), and Unicode password creation (201 vs 400). The earlier independent Chromium review also reproduced commit/lost response/reload creating two orders.
+
+The repaired regression suite checks HEAD, stable zero IDs with a pending order, valid PNG/JPEG/WebP decoding, truncated PNG including missing IEND, Unicode whitespace at credential creation/login/change/offline reset, and unchanged stock on retry. Migration now includes variant ID "0" referenced by a pending order, preserves its ID and permits product editing after import. Malformed older one-pixel test PNG had an invalid stream/checksum; it was replaced with a valid generated PNG so legitimate-image assertions test actual image decoding.
+
+The updated browser test deliberately lets POST /api/orders commit, aborts only the response, reloads checkout, and verifies the original key, body, order ID and single inventory decrement. A separate test purges expired customer data and requires explicit confirmation for a new attempt. Logout tests wait for the logged-out UI before navigating; the application awaits server logout before showing that state. No timeout increase was used.
+
+The TLS/update harness reapplies controllers, frontend and private source in both supported directory layouts; compares store data, config bytes and image bytes; then removes bootstrap temporarily and verifies a generic 500 without path/fatal/stack output.
+
+MySQL 8 regression command: `node --import tsx tools/test-mysql.ts` after PHP test setup. This starts isolated named disposable containers, tests 16 concurrent buyers/retries/cancellations and rollback, and imports a synthetic SQLite export with all nine table counts/content hashes. Requires Docker and TCP port 3151. MariaDB suite: `npm run test:php`. Never target production databases with these fixtures.
+
+P.A Business 2 Linux itself has NOT been tested. Its advertised PHP/MySQL support is suitable in principle; exact PHP/extensions/GD codecs, database version/InnoDB, LiteSpeed deny/rewrite behavior, permissions, resource limits and panel update/import workflow still require staging verification. Real customer data and large migrations have not been tested.
+
+Final local results: Node API 23/23; Node Chromium 7/7. PHP/MariaDB API/migration/regression run 37 passed + 1 SQLite-only skip, zero failures; PHP Chromium 7/7. TLS and both-layout update/failure checks passed. Installer NBSP rejection passed separately. MySQL 8.0.46 targeted concurrency/rollback/migration checks passed. PHP 8.3.36, MariaDB 10.11.19, Apache 2.4.69. TypeScript/Vite build passed. A dirty release build was rejected before creating output. Staging on P.A remains outstanding.
+
+After the final checkout controls were locked during pending replay, PHP Chromium was run again with a fresh synthetic fixture: 7/7 passed. A direct targeted attempt against the installer test's deliberately empty catalog was discarded as fixture misuse; the final run reset the fixture correctly. Logs and browser artifacts are retained only in ignored work/test-result directories.

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace Fillico;
 require_once __DIR__.'/Support.php';
+require_once __DIR__.'/Password.php';
 require_once __DIR__.'/Store.php';
 require_once __DIR__.'/Auth.php';
 require_once __DIR__.'/Catalog.php';
@@ -16,7 +17,7 @@ function config(string $private): array {
 }
 function environmentChecks(): array {
     $checks=['PHP >= 8.3'=>version_compare(PHP_VERSION,'8.3.0','>='),'64-bit integers'=>PHP_INT_SIZE===8,'Argon2id'=>defined('PASSWORD_ARGON2ID')&&in_array('argon2id',password_algos(),true)];
-    foreach(['pdo_mysql','json','mbstring','fileinfo'] as $ext)$checks[$ext]=extension_loaded($ext);return $checks;
+    foreach(['pdo_mysql','json','mbstring','fileinfo','gd'] as $ext)$checks[$ext]=extension_loaded($ext);$checks['GD PNG/JPEG/WebP']=extension_loaded('gd')&&(imagetypes() & (IMG_PNG|IMG_JPG|IMG_WEBP))===(IMG_PNG|IMG_JPG|IMG_WEBP);return $checks;
 }
 function databaseChecks(Store $s): array {
     $raw=(string)$s->query('SELECT VERSION()')->fetchColumn();
@@ -53,5 +54,5 @@ function serveUpload(array $c,string $path): never {
     if(!preg_match('/^[a-f0-9-]{36}\.(?:png|jpg|webp)$/D',$name))fail(404,'Không tìm thấy ảnh.');
     $file=$c['uploads_dir'].'/'.$name;if(!is_file($file)||is_link($file))fail(404,'Không tìm thấy ảnh.');
     $ext=pathinfo($file,PATHINFO_EXTENSION);header('Content-Type: '.['png'=>'image/png','jpg'=>'image/jpeg','webp'=>'image/webp'][$ext]);
-    header('Cache-Control: public, max-age=604800');header('Content-Length: '.filesize($file));readfile($file);exit;
+    header('Cache-Control: public, max-age=604800');header('Content-Length: '.filesize($file));if(($_SERVER['REQUEST_METHOD']??'GET')!=='HEAD')readfile($file);exit;
 }

@@ -50,7 +50,7 @@ final class Api {
         if($path==='/api/admin/uploads'&&$method==='POST')return $ok($this->upload($u),201);
         if($path==='/api/admin/staff'){
             if($method==='GET')return $ok(['staff'=>$s->query('SELECT id,name,email,role FROM users ORDER BY seq')->fetchAll()]);
-            if($method==='POST'){$d=obj($body);$user=['id'=>uuid(),'name'=>txt($d['name']??null,'Họ tên',2,100),'email'=>email($d['email']??null),'role'=>'staff'];$password=txt($d['password']??null,'Mật khẩu',12,200);
+            if($method==='POST'){$d=obj($body);$user=['id'=>uuid(),'name'=>txt($d['name']??null,'Họ tên',2,100),'email'=>email($d['email']??null),'role'=>'staff'];$password=credential($d['password']??null);
                 if($s->one('SELECT id FROM users WHERE email=?',[$user['email']]))fail(409,'Email đã tồn tại.');$s->query('INSERT INTO users(id,email,name,role,password_hash) VALUES(?,?,?,?,?)',[$user['id'],$user['email'],$user['name'],$user['role'],passwordHash($password)]);$s->audit($u,'staff.create',['id'=>$user['id']]);return $ok(['user'=>$user],201);}
         }
         if($method==='DELETE'&&preg_match('~^/api/admin/staff/([^/]+)$~D',$path,$m)){
@@ -67,6 +67,29 @@ final class Api {
         $info=@getimagesizefromstring($bytes);$mime=(new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes);
         if(!isset($types[$type])||!$info||$info['mime']!==$type||$mime!==$type)fail(400,'Chỉ hỗ trợ ảnh PNG, JPEG hoặc WebP hợp lệ.');
         if($info[0]<1||$info[1]<1||$info[0]>16000||$info[1]>16000||$info[0]*$info[1]>40000000)fail(400,'Ảnh tối đa 40 triệu pixel và 16.000 pixel mỗi chiều.');
+        if(!extension_loaded('gd'))fail(503,'Máy chủ cần GD hỗ trợ PNG, JPEG và WebP.');
+        // Reserve ample memory for decoding and reject warnings from damaged streams.
+        $limit=ini_get('memory_limit');$budget=(int)$limit;
+        if($budget>0){$unit=strtolower(substr($limit,-1));$budget*=match($unit){'g'=>1073741824,'m'=>1048576,'k'=>1024,default=>1};
+            if(memory_get_usage(true)+strlen($bytes)*2+$info[0]*$info[1]*8+16777216>$budget)fail(413,'Ảnh vượt bộ nhớ xử lý cho phép.');}
+        if($type==='image/png'){
+            $offset=8;$ended=false;$pixels=false;$length=strlen($bytes);
+            while($offset+12<=$length){
+                $size=unpack('N',substr($bytes,$offset,4))[1];
+                if($size>$length-$offset-12)fail(400,'Dữ liệu PNG không đầy đủ.');
+                $chunk=substr($bytes,$offset+4,4+$size);$kind=substr($chunk,0,4);
+                if(hash('crc32b',$chunk)!==bin2hex(substr($bytes,$offset+8+$size,4)))fail(400,'PNG sai checksum.');
+                $offset+=12+$size;if($kind==='IDAT')$pixels=true;
+                if($kind==='IEND'){$ended=$size===0&&$offset===$length;break;}
+            }
+            if(!$ended||!$pixels)fail(400,'Dữ liệu PNG không đầy đủ.');
+        }
+        if(memory_get_usage(true)+strlen($bytes)*2+$info[0]*$info[1]*8+16777216>268435456)fail(413,'Ảnh vượt giới hạn tài nguyên xử lý.');
+        $image=false;
+        set_error_handler(static function(){throw new \RuntimeException('Invalid image stream');});
+        try{$image=imagecreatefromstring($bytes);}catch(\Throwable){fail(400,'Dữ liệu ảnh bị hỏng.');}finally{restore_error_handler();}
+        if(!$image)fail(400,'Dữ liệu ảnh bị hỏng.');
+        imagedestroy($image);
         $dir=$this->c['uploads_dir'];if(!is_dir($dir)||!is_writable($dir))fail(503,'Thư mục ảnh chưa sẵn sàng. Vui lòng liên hệ quản trị.');
         $name=uuid().'.'.$types[$type];$path=$dir.'/'.$name;$f=fopen($path,'xb');if(!$f)throw new \RuntimeException('upload open');
         try{if(fwrite($f,$bytes)!==strlen($bytes))throw new \RuntimeException('upload write');}finally{fclose($f);}chmod($path,0600);

@@ -98,7 +98,7 @@ Nhập SQL tạo ra vào đúng database qua phpMyAdmin, xác nhận id/email tr
 Ưu tiên nhờ P.A cho phép thư mục cùng cấp như cấu trúc chuẩn; việc không đổi được document root thường vẫn cho tạo thư mục ngoài public_html. Nếu thực sự không được:
 
 1. Đặt fillico-private trong public_html. Giữ nguyên `fillico-private/.htaccess` chứa `Require all denied` và luật chặn ở `.htaccess` gốc.
-2. Trong cả index.php và setup.php, đổi đúng dòng `$private=dirname(__DIR__).'/fillico-private';` thành `$private=__DIR__.'/fillico-private';`. uploads_dir trong config vẫn dùng __DIR__, nên nằm trong thư mục bị chặn.
+2. Giữ nguyên index.php và setup.php. Controller tự chọn vị trí chứa config.php; uploads_dir trong config dùng __DIR__, nên nằm trong thư mục bị chặn.
 3. Trên staging, mở `/fillico-private/config.php`, `/fillico-private/src/Support.php`, `/fillico-private/migrations/001_initial.sql` và `/fillico-private/uploads/...`: tất cả phải trả 403 hoặc 404, tuyệt đối không trả nội dung tệp. Kiểm tra `/api/store` và ảnh `/uploads/TÊN-ẢNH-CŨ.png` vẫn hoạt động.
 4. Chưa mở bán nếu cơ chế deny không có hiệu lực. Không bỏ .htaccess để chữa lỗi 500. Phương án này đã được kiểm thử trên Apache; LiteSpeed và cấu hình P.A vẫn phải kiểm tra tại hosting.
 
@@ -138,3 +138,17 @@ npm run build:hosting    # Tạo work/hosting, phải chưa tồn tại
 Máy kiểm thử cần Docker, Node >=24, Chromium (đường dẫn PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH nếu khác /usr/bin/chromium). Dockerfile và script setup chỉ dành cho phát triển. Script dùng tên fillico-db/fillico-web, database fillico_test/fillico_migration và mật khẩu cố định cho dữ liệu giả; tuyệt đối không dùng cấu hình test trên hosting. Nếu môi trường test cũ tồn tại, kiểm tra đúng container thử rồi dừng/xóa chúng và dùng thư mục sandbox mới; script không tự xóa container có sẵn. Không chạy hai bộ test PHP đồng thời trên cùng database thử.
 
 Build hosting chỉ sao chép frontend build và PHP runtime không có dependency Composer. Code Node trong server/ được giữ nguyên để tham chiếu/quay lại; test có adapter để chạy cùng assertion trên PHP. Xem KHAO-SAT.md, CHECKLIST.md, KIEM-THU.md và KIEN-TRUC.md trước khi duyệt chuyển đổi.
+
+## Audit fixes: deployment and updates
+
+Controllers now discover exactly one retained config.php at either sibling fillico-private/config.php or public_html/fillico-private/config.php. Do not edit index.php/setup.php for layout selection. If both contain config.php, initialization fails closed: select the intended deployment explicitly by keeping only its active configuration (back up the other outside the web tree). Keep deny rules for the fallback directory; verify them on P.A LiteSpeed before opening traffic.
+
+PHP GD with PNG, JPEG and WebP decoding is now required, in addition to the existing extensions. The installer checks it. Uploads remain private and existing stored images are preserved; new uploads must pass full decoding. The memory limit may reject very large images even within the pixel cap.
+
+During updates copy frontend build, public controllers/.htaccess and private src. Preserve config.php, uploads, setup.lock and all database tables; omit setup.php on an established installation. Controller paths no longer require a per-update modification. Both layouts have a regression test that reapplies the complete code release and checks unchanged settings and image bytes. Never use a panel's "replace whole directory" option that deletes retained files.
+
+Passwords must have 12–200 UTF-16 code units and no leading/trailing whitespace, including NBSP U+00A0 and BOM. Login/current-password validation permits older short credentials but uses the same whitespace policy. Offline reset uses the same Password.php policy: keep guides/Password.php beside guides/reset-password.php when running the packaged helper locally.
+
+Checkout stores only the pending request in per-tab sessionStorage for at most 30 minutes while the application runs. The same key/body are replayed after network/5xx errors and reload. Success or definitive 4xx rejection removes it (408/429 remain pending). After expiry the payload is removed and a key-only warning remains: check the earlier order with the shop before explicitly starting a new checkout. No customer payload is written to localStorage by this mechanism.
+
+Release builds: commit all source changes first, run npm run build, then npm run build:hosting with a new output directory. BUILD.json includes the exact source commit, clean/dirty status and SHA-256 of source files. --allow-dirty is for development only; never identify such a package by commit alone. Keep the ZIP checksum with the deployment record. Build and migration tools run on the development machine, without requiring Node/SSH on hosting.

@@ -10,7 +10,7 @@ final class Catalog {
         if(!isset($d['variants'])||!is_array($d['variants'])||!array_is_list($d['variants'])||count($d['variants'])<1||count($d['variants'])>50)fail(400,'Sản phẩm cần từ 1 đến 50 phân loại.');
         $seen=[];$skus=[];$vs=[];
         foreach($d['variants'] as $input){
-            $v=obj($input);$vid=empty($v['id'])?uuid():txt($v['id'],'Mã phân loại',1,100);
+            $v=obj($input);$vid=!isset($v['id'])||$v['id']===''||$v['id']===false||$v['id']===0||$v['id']===0.0?uuid():txt($v['id'],'Mã phân loại',1,100);
             if(in_array($vid,$seen,true))fail(400,'Mã phân loại bị trùng.');$seen[]=$vid;
             $other=$this->s->one('SELECT product_id FROM variants WHERE id=?',[$vid]);if($other&&$other['product_id']!==$id)fail(400,'Phân loại thuộc sản phẩm khác.');
             $sku=txt($v['sku']??null,'SKU',1,100);if(in_array($sku,$skus,true))fail(400,'SKU bị trùng trong sản phẩm.');$skus[]=$sku;

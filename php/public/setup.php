@@ -1,12 +1,25 @@
 <?php
 declare(strict_types=1);
-$private=dirname(__DIR__).'/fillico-private';
-require $private.'/src/bootstrap.php';
+ini_set('display_errors','0');
+header_remove('X-Powered-By');
+header('Cache-Control: no-store');
+set_error_handler(static function(int $severity,string $message,string $file,int $line): bool {
+    if(!(error_reporting() & $severity))return false;
+    throw new \ErrorException('Runtime operation failed',0,$severity,$file,$line);
+});
+
 ini_set('display_errors','0');
 header_remove('X-Powered-By');
 header('Cache-Control: no-store');header('X-Content-Type-Options: nosniff');header('X-Frame-Options: DENY');header("Content-Security-Policy: default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
 function h(string $v): string { return htmlspecialchars($v,ENT_QUOTES,'UTF-8'); }
 try {
+    $candidates=[dirname(__DIR__).'/fillico-private',__DIR__.'/fillico-private'];
+    $configured=array_values(array_filter($candidates,static fn($dir)=>is_file($dir.'/config.php')));
+    if(count($configured)!==1)throw new \RuntimeException('Deployment configuration missing or ambiguous');
+    $private=$configured[0];
+    if(!is_file($private.'/src/bootstrap.php'))throw new \RuntimeException('Runtime unavailable');
+    require $private.'/src/bootstrap.php';
+
     $c=\Fillico\config($private);
     if(empty($c['setup_token'])||strlen($c['setup_token'])<43||is_file($private.'/setup.lock')){http_response_code(404);exit;}
     if(empty($c['allow_http'])&&($_SERVER['HTTPS']??'')!=='on'&&($_SERVER['REQUEST_SCHEME']??'')!=='https')\Fillico\fail(403,'Cần truy cập bằng HTTPS.');
@@ -15,7 +28,7 @@ try {
         if(($_SERVER['HTTP_ORIGIN']??'')!==$c['origin']||($_SERVER['HTTP_SEC_FETCH_SITE']??'')==='cross-site')\Fillico\fail(403,'Yêu cầu từ nguồn không được phép.');
         if(!is_string($_POST['token']??null)||!hash_equals($c['setup_token'],$_POST['token']))\Fillico\fail(403,'Mã cài đặt không đúng.');
         if(!$ready)\Fillico\fail(503,'Môi trường chưa đáp ứng yêu cầu.');
-        $email=\Fillico\email($_POST['email']??null);$name=\Fillico\txt($_POST['name']??null,'Họ tên',2,100);$password=\Fillico\txt($_POST['password']??null,'Mật khẩu',12,200);
+        $email=\Fillico\email($_POST['email']??null);$name=\Fillico\txt($_POST['name']??null,'Họ tên',2,100);$password=\Fillico\credential($_POST['password']??null);
         if($password!==($_POST['repeat']??null))\Fillico\fail(400,'Mật khẩu nhập lại không khớp.');
         if(!is_dir($c['uploads_dir'])||!is_writable($c['uploads_dir'])||!is_writable($private))\Fillico\fail(503,'Kiểm tra quyền ghi thư mục riêng và uploads.');
         $s=new \Fillico\Store($c);

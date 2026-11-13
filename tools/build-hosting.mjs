@@ -1,6 +1,10 @@
+import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { mkdir, cp, writeFile, readdir, chmod } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
+const dirty=execFileSync('git',['status','--porcelain','--untracked-files=all'],{encoding:'utf8'}).trim();
+if(dirty&&!process.argv.includes('--allow-dirty'))throw new Error('Release requires a clean committed source; --allow-dirty is development only');
 const target = resolve(process.argv[2] || 'work/hosting');
 // Only build into an empty/new path. Never erase config, uploads or a previous deployment.
 await mkdir(target, { recursive: false });
@@ -17,8 +21,11 @@ await writeFile(join(privateDir,'defaults.json'),JSON.stringify(defaultSettings,
 await mkdir(join(target,'guides'));
 for(const file of ['HUONG-DAN.md','CHECKLIST.md','KIEM-THU.md','KHAO-SAT.md','KIEN-TRUC.md'])await cp(join('docs',file),join(target,'guides',file));
 await cp('tools/reset-password.php',join(target,'guides/reset-password.php'));
+await cp('php/src/Password.php',join(target,'guides/Password.php'));
 const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
-await writeFile(join(target,'BUILD.json'),JSON.stringify({sourceCommit:sha,builtAt:new Date().toISOString(),runtime:'PHP 8.3+, MySQL 8.0.16+ / MariaDB 10.6+',frontend:'React/Vite',layout:'public_html + sibling fillico-private'},null,2)+'\n');
+const sourceFiles=execFileSync('git',['ls-files','--cached','--others','--exclude-standard','-z'],{encoding:'utf8'}).split('\0').filter(Boolean);
+const sourceHashes={};for(const path of sourceFiles)sourceHashes[path]=createHash('sha256').update(await readFile(path)).digest('hex');
+await writeFile(join(target,'BUILD.json'),JSON.stringify({sourceCommit:sha,sourceDirty:!!dirty,sourceHashes,sourceChanges:dirty?dirty.split('\n'):[],builtAt:new Date().toISOString(),runtime:'PHP 8.3+, MySQL 8.0.16+ / MariaDB 10.6+',frontend:'React/Vite',layout:'public_html + sibling fillico-private'},null,2)+'\n');
 async function permissions(dir){await chmod(dir,0o755);for(const e of await readdir(dir,{withFileTypes:true})){const p=join(dir,e.name);if(e.isDirectory())await permissions(p);else await chmod(p,0o644);}}
 await permissions(target);await chmod(privateDir,0o750);await chmod(join(privateDir,'uploads'),0o700);
 console.log(`Hosting files: ${target}`);

@@ -15,7 +15,7 @@ final class Auth {
         setcookie('fillico_session',$value,['expires'=>$expires,'path'=>'/','secure'=>str_starts_with($this->config['origin'],'https://'),'httponly'=>true,'samesite'=>'Lax']);
     }
     public function login(array $d): array {
-        $email=email($d['email']??null);$password=txt($d['password']??null,'Mật khẩu',1,200);
+        $email=email($d['email']??null);$password=credential($d['password']??null,1);
         // Do not trust spoofable X-Forwarded-For on shared hosting.
         $key=hash('sha256',$_SERVER['REMOTE_ADDR']??'unknown');$now=millis();
         $a=$this->s->one('SELECT * FROM login_attempts WHERE ip_hash=?',[$key]);
@@ -38,7 +38,7 @@ final class Auth {
         $this->s->query('DELETE FROM sessions WHERE token_hash=?',[hash('sha256',$_COOKIE['fillico_session']??'')]);$this->cookie('',time()-3600);return ['ok'=>true];
     }
     public function changePassword(array $d,array $u): array {
-        $current=txt($d['currentPassword']??null,'Mật khẩu hiện tại',1,200);$password=txt($d['password']??null,'Mật khẩu mới',12,200);
+        $current=credential($d['currentPassword']??null,1);$password=credential($d['password']??null);
         $row=$this->s->one('SELECT password_hash FROM users WHERE id=?',[$u['id']]);
         if(!verifyPassword($current,$row['password_hash']))fail(400,'Mật khẩu hiện tại không chính xác.');
         $this->s->query('UPDATE users SET password_hash=? WHERE id=?',[passwordHash($password),$u['id']]);
