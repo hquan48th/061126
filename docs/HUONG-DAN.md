@@ -1,154 +1,53 @@
-# Hướng dẫn cài đặt FILLICO PHP/MySQL
+# Cài đặt và cập nhật Fillico PHP
 
-Gói này dành cho Linux + PHP + MySQL/MariaDB. Máy hosting chỉ nhận tệp qua File Manager/FTP và SQL qua phpMyAdmin. Không cần chạy Node, npm, Composer, Docker, root, SSH hoặc tiến trình nền trên hosting. Các lệnh phát triển bên dưới chỉ chạy trên máy build.
+## Yêu cầu
 
-## 1. Xác nhận với P.A Việt Nam trước khi mua Business 2
+PHP 8.3+ 64-bit với Argon2id, `pdo_mysql`, `mbstring`, JSON, `fileinfo`, `iconv` và GD hỗ trợ PNG/JPEG/WebP. Excel cần `zip` và `dom`, cùng quyền ghi thư mục tạm của PHP. MySQL 8.0.16+ hoặc MariaDB 10.6+ dùng InnoDB/utf8mb4. Apache 2.4 hoặc LiteSpeed cần hỗ trợ .htaccess/rewrite, cờ [END] và AllowOverride All. PHP cần đọc/ghi được thư mục private ngoài DocumentRoot.
 
-Chưa có xác nhận trực tiếp từ nhà cung cấp về thông số gói. Không mặc định dung lượng 8 GB. Gửi danh sách sau cho bộ phận hỗ trợ:
+Hosting dùng HTTPS. Gợi ý memory_limit >=128M, post_max_size/upload_max_filesize >=8M; ứng dụng giới hạn raw ảnh 5 MiB, JSON 1 MiB. Xác nhận web server không chặn PUT/PATCH/DELETE, cookie hoặc Idempotency-Key. Không cần Node/npm/Composer/build.
 
-| Cần hỏi | Yêu cầu / lý do |
-|---|---|
-| Hệ điều hành và PHP | Linux, PHP 8.3+ 64 bit, chọn phiên bản trong panel |
-| Extension | PDO + pdo_mysql, mbstring, JSON, fileinfo, Argon2id trong password_algos; getimagesizefromstring |
-| Database | MariaDB 10.6+ hoặc MySQL 8.0.16+, InnoDB, utf8mb4, prepared statements, transaction/row lock |
-| Web server | Apache 2.4 hoặc LiteSpeed hỗ trợ RewriteRule, END, Options -Indexes -MultiViews, Require all denied và .htaccess |
-| Document root và private | Cho tạo fillico-private cạnh public_html; PHP open_basedir được đọc/ghi thư mục này; PHP chạy dưới user tài khoản |
-| SSL | Có SSL cho tên miền chính, buộc HTTPS/canonical host; PHP nhận HTTPS=on hoặc REQUEST_SCHEME=https |
-| Request/upload | Cho raw POST image tối đa 5 MiB, JSON 1 MiB; LimitRequestBody/ModSecurity không chặn PUT/PATCH/DELETE, cookie và Idempotency-Key |
-| PHP limits | Khuyến nghị memory_limit >=128 MiB, post_max_size/upload_max_filesize >=8 MiB, max_execution_time >=30 giây; xác minh mức cho phép thật |
-| Tài nguyên chia sẻ | RAM/CPU/IO/process/entry-process/database connection limits và cách xử lý vượt hạn mức |
-| Dung lượng | Dung lượng thực, inode, database quota, băng thông; ảnh và các bản sao lưu đều chiếm chỗ |
-| phpMyAdmin | Giới hạn tệp nhập, timeout, max_allowed_packet; có thể tải SQL nén và export đầy đủ không |
-| Backup | Tần suất, số bản giữ, phạm vi database + tệp, phí khôi phục nếu có, tự tải bản backup về máy được không |
-| Cron | Xác nhận có/không, tần suất tối thiểu; bản này không cần cron |
-| Log | PHP error log riêng ngoài webroot, tắt display_errors, OPcache có cơ chế làm mới khi cập nhật |
+## Cài mới
 
-Nếu PHP chạy dưới user khác hoặc open_basedir không cho đọc thư mục ngoài webroot, nhờ hỗ trợ cấu hình trước. Không giải quyết bằng chmod 777 hoặc mở công khai config.
+1. Chép nội dung public_html vào thư mục web, giữ file ẩn .htaccess. Đặt fillico-private cùng cấp bên ngoài. Không công khai source/config/SQL/backup.
+2. Tạo database và user riêng. Trong phpMyAdmin, nhập theo thứ tự `001_initial.sql`, `002_customer_accounts.sql` và `003_customer_orders.sql` trong `fillico-private/migrations/`. Giá trị cao nhất trong `schema_migrations` phải là 3.
+3. Chép config.example.php thành config.php trong private. Điền host/port/database/user/password thật, origin `https://ten-mien` không dấu / cuối, uploads_dir mặc định, allow_http=false. Thống nhất HTTPS/host chính trong panel.
+4. PHP có quyền ghi private và uploads. Quyền tham khảo: thư mục public 755, file public 644, private 750, uploads 700, config 600; theo user chạy PHP của hosting.
+5. Tạo secret ngẫu nhiên 32 byte bằng trình quản lý mật khẩu hoặc `php -r "echo bin2hex(random_bytes(32));"` trên máy cá nhân; điền setup_token. Không đặt secret trong URL.
+6. Mở /setup.php, kiểm tra môi trường, nhập secret/email/tên/mật khẩu (12–200 đơn vị UTF-16, không khoảng trắng đầu/cuối). Installer tạo owner/cấu hình mặc định, không thêm sản phẩm mẫu và không ghi đè tài khoản cũ.
+7. Xóa setup.php và setup_token sau khi xong; giữ setup.lock. Mở /admin, thêm sản phẩm, cấu hình công ty, phí, banner, ngân hàng, chính sách.
 
-## 2. Giải nén và nhận diện thư mục
+Controller hỗ trợ private trong public_html nếu hosting bắt buộc: giữ .htaccess chặn ở cả hai nơi; kiểm chứng URL config/src/SQL/private ảnh trả 403/404. Chỉ giữ MỘT config.php ở bố cục được chọn.
 
-Giải nén `fillico-hosting.zip` ở máy tính. Không upload nguyên ZIP vào public_html rồi để đó. Cấu trúc:
+Nếu lỗi API, xem PHP error log/config/database. Trang sâu 404: kiểm tra rewrite và .htaccess. Không bỏ luật chặn private để sửa lỗi.
 
-```text
-public_html/                React đã build, index.php, setup.php, .htaccess, assets, images
-fillico-private/            PHP src, migrations, defaults.json, config.example.php, uploads/
-guides/                     tài liệu và công cụ reset mật khẩu OFFLINE
-BUILD.json                  thông tin bản dựng
-```
+## Local và phát triển
 
-Chỉ nội dung public_html được đưa ra web. guides và BUILD.json giữ ở máy cá nhân. `fillico-private` nằm cùng cấp public_html, không phải bên trong. Không upload source ZIP, .git, .local, node_modules, test, SQL dump, bản backup hay tệp thông tin đăng nhập vào public_html.
+Làm theo README. Chạy `php -S 127.0.0.1:8000 -t public_html router.php`. Local origin phải là http://127.0.0.1:8000 và allow_http=true; database phải chạy. PHP CLI server chỉ dành local.
 
-Trong File Manager bật **Show hidden files** để nhìn và upload `.htaccess`. Có thể giải nén toàn bộ ZIP ở thư mục riêng ngoài public_html rồi chuyển đúng hai thư mục cần chạy đến vị trí trên.
+Template: fillico-private/templates. Nghiệp vụ: fillico-private/src; Api.php (route), Auth.php (tài khoản), Catalog.php (sản phẩm/settings), Orders.php (đơn), Store.php (database), Web.php (render). Tương tác/CSS: public_html/assets. Sửa file trực tiếp, không build. Kiểm tra bằng tools/check.php và tests/run.php; browser tùy chọn --browser.
 
-## 3. Tạo database và cấu hình
+## Chuyển SQLite cũ bằng PHP
 
-1. Trong panel hosting mở mục MySQL Databases, tạo database mới và user riêng. Panel có thể tự thêm tiền tố tài khoản vào tên; ghi đúng tên đầy đủ. Cấp quyền cho user trên database này. Không dùng database đang có dữ liệu khác.
-2. Mở phpMyAdmin, chọn đúng database mới. Tab Import → chọn `fillico-private/migrations/001_initial.sql` từ máy tính → charset UTF-8 → Import. Kiểm tra có 11 bảng và schema_migrations có version=1. Chưa có sản phẩm, đơn hay tài khoản là bình thường.
-3. Trong thư mục fillico-private trên hosting, sao chép `config.example.php` thành `config.php`. Sửa dsn với host/port/tên database do P.A cấp, db_user và db_password. Không tự đoán database host. Giữ charset=utf8mb4.
-4. Đặt origin là URL HTTPS chính xác, không dấu `/` cuối, ví dụ `https://fillico.vn`. Nếu dùng staging, điền origin staging. Không để origin staging khi mở bán. Dùng panel để thống nhất host chính (www hoặc không www) và HTTPS. `allow_http` luôn false trên hosting.
-5. Giữ uploads_dir là `__DIR__ . '/uploads'`. Kiểm tra thư mục tồn tại và PHP có quyền ghi. Thư mục riêng khuyến nghị 750, uploads 700, config.php 600; tệp public 644, thư mục public 755. Nếu panel dùng cơ chế quyền khác, nhờ hỗ trợ xác nhận thay vì mở quyền ghi cho mọi người.
-6. Trong PHP Settings đặt post_max_size và upload_max_filesize ít nhất 8M, memory_limit ít nhất 128M nếu gói cho phép; ứng dụng vẫn giới hạn raw ảnh 5 MiB. Không đưa phpinfo lên web. Kiểm tra giới hạn web server/ModSecurity riêng vì PHP không thể đổi giới hạn phía trước nó.
+Máy chuyển cần pdo_sqlite và sqlite3; website/hosting bình thường không cần. Công cụ chỉ đọc bản sao SQLite và xuất SQL.
 
-Không gửi cấu hình, mật khẩu hoặc mã cài đặt vào chat. Tệp config chỉ tồn tại ở hosting riêng và bản sao lưu có kiểm soát.
+1. Dừng ghi ở hệ thống cũ, sao lưu database và uploads nhất quán; không chỉ copy .sqlite đang có WAL. Giữ bản gốc.
+2. Chạy `php tools/sqlite-to-mysql.php --source /backup/store.sqlite --check`.
+3. Xuất vào thư mục MỚI: `php tools/sqlite-to-mysql.php --source /backup/store.sqlite --export --out /NEW/private-export`. Kết quả: source-backup.sqlite, data.sql, verify.sql, manifest.json, report.json, uploads/. Nếu lỗi, không nhập kết quả dở dang.
+4. Tạo database đích mới và nhập hai migration như mục Cài mới. Import data.sql vào database trống. Giữ ID, đơn, phiếu, token tra cứu, dữ liệu chống trùng, giá, tồn và thứ tự. Phiên cũ sẽ hết hiệu lực. Công cụ phải báo kiểm tra đạt trước khi tiếp tục.
+5. Chép ảnh xuất vào private/uploads, giữ tên. Import verify.sql: mọi count_ok/content_ok bằng 1. Chạy thêm `php tools/verify-import.php /private/config.php /private-export/manifest.json` để đối chiếu từng dòng và checksum ảnh.
+6. Reset tài khoản scrypt cũ SAU khi verify: `php tools/reset-password.php USER_ID /private/reset.sql`. Công cụ nhận mật khẩu từ stdin, không tham số. Terminal tương tác phải hỗ trợ ẩn nhập; Windows có thể dùng WSL hoặc pipe từ công cụ quản lý bí mật. Nhập SQL bằng phpMyAdmin rồi xóa file reset.
+7. Giữ setup_token rỗng, không upload setup.php cho bản chuyển dữ liệu. Kiểm tra đơn/token cũ, ảnh, tồn, phiếu và tài khoản trên staging trước khi mở ghi.
 
-## 4A. Khởi tạo cửa hàng mới (không có dữ liệu cũ)
+Sau khi PHP có đơn mới, không quay về snapshot cũ mà chưa đối soát đơn/tồn phát sinh.
 
-1. Ở máy build có Node, tạo mã ngẫu nhiên bằng `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`. Hoặc dùng trình quản lý mật khẩu tạo chuỗi ngẫu nhiên ít nhất 43 ký tự. Không dùng ví dụ trong mã test.
-2. Điền chuỗi đó vào setup_token của config.php bằng File Manager. Không đưa mã vào URL.
-3. Mở `https://TÊN-MIỀN-CỦA-BẠN/setup.php`. Trang chỉ hiển thị đạt/chưa đạt các yêu cầu PHP, không in bí mật hay toàn bộ phpinfo. Nếu thiếu extension hoặc Argon2id, nhờ hosting bật trước.
-4. Nhập mã cài đặt, tên chủ shop, email và mật khẩu mới ít nhất 12 ký tự. Dùng mật khẩu riêng, lưu trong trình quản lý mật khẩu. Bấm tạo chủ cửa hàng. Nếu database đã có tài khoản, installer sẽ từ chối, không ghi đè.
-5. Khi thành công, setup.lock được tạo trong thư mục riêng; installer tự trả 404 từ lần truy cập tiếp theo. Xóa setup.php khỏi public_html và xóa giá trị setup_token trong config.php. Giữ setup.lock.
-6. Mở `/admin`, đăng nhập bằng tài khoản vừa tạo. Thêm sản phẩm thật, ảnh, giá, tồn kho; cập nhật thông tin công ty, chính sách, phí vận chuyển, ngân hàng. Khởi tạo chỉ thêm cấu hình mặc định, không tự thêm sản phẩm mẫu.
+## Bảo trì và sao lưu
 
-## 4B. Chuyển cửa hàng Node/SQLite đang có dữ liệu
+Sửa code rồi tải lên đúng đường dẫn. Dùng cửa sổ bảo trì cho nhiều file; làm mới OPcache theo panel nếu cần. Trình duyệt tải lại mạnh để nhận CSS/JS mới.
 
-Thực hiện trên bản sao trước. Clone GitHub không mang theo `.local`. Phiên chuyển đổi này không sử dụng dữ liệu thật hoặc tự nhập `.local` sẵn có của bạn.
+1. Sao lưu SQL đầy đủ và giữ bản sao `config.php`, `uploads` và `setup.lock` ngoài webroot. Thử khôi phục bản sao vào database mới.
+2. Khi kiểm thử trên database Fillico đã cấu hình, có thể chạy `php tools/migrate.php` để đồng bộ schema. Công cụ đọc `fillico-private/config.php` và cần quyền `CREATE TABLE`.
+3. Kiểm tra `SELECT MAX(version) FROM schema_migrations;` trả về 3. Trong môi trường thử, đăng ký một tài khoản, đặt thử và mở **Đơn hàng của tôi**. Từ Seller Center, xuất file Excel, sửa một dòng và nhập lại.
 
-1. Chọn giờ bảo trì, dừng nhận đơn và sửa dữ liệu trên Node. Dừng server Node rồi sao lưu toàn bộ DATA_DIR, gồm store.sqlite và uploads. Nếu không dừng được phải dùng SQLite backup API để chụp snapshot; không chỉ copy tệp SQLite đang có WAL. Giữ ít nhất một bản backup bất biến ngoài thư mục chuyển đổi.
-2. Trên máy phát triển cài Node >=24. Trong thư mục source đã bàn giao, chạy:
+`php tools/package.php /NEW/output-folder` tạo gói từ source hiện tại, không cần Git/compiler. ZIP cần extension zip. Chỉ upload public_html và fillico-private; README/guides/tools/BUILD.json giữ ở máy cá nhân.
 
-   ```bash
-   node tools/sqlite-to-mysql.mjs --source /duong-dan/ban-sao/store.sqlite --check
-   node tools/sqlite-to-mysql.mjs --source /duong-dan/ban-sao/store.sqlite --export --out /duong-dan/thu-muc-moi-rieng-tu
-   ```
-
-   `--check` chỉ đọc. `--export` bắt buộc thư mục mới, tự tạo `source-backup.sqlite` nhất quán trước khi xuất. Không đổi database nguồn. Công cụ dừng nếu schema lạ, JSON/quan hệ/numeric field không hợp lệ hoặc ảnh tham chiếu bị thiếu. Không bỏ qua lỗi để nhập tiếp.
-3. Thư mục xuất chứa data.sql, verify.sql, manifest.json, report.json, source-backup.sqlite và uploads. Tất cả đều là dữ liệu riêng, không đặt trong webroot. report ghi số lượng nguồn/đích. ID, mã đơn, token hash, response idempotency gồm token gốc, giá/tồn/thời gian và phiếu giữ nguyên. seq giữ thứ tự rowid. Sessions cố ý không nhập (thu hồi tất cả phiên cũ); hash scrypt giữ để đối chiếu nhưng không được đăng nhập.
-4. Tạo database ĐÍCH MỚI, nhập 001_initial.sql như bước 3. Không chạy installer. Nhập data.sql qua phpMyAdmin vào database trống. Mỗi INSERT có điều kiện chỉ chạy nếu tất cả bảng đích trống ngay khi bắt đầu; database không trống báo STOP và không nhập thêm. Nếu import lỗi hoặc bị timeout, không nối tiếp mù quáng: bỏ database thử bị nhập dở, tạo database thử mới rồi nhập lại từ đầu. Không xóa dữ liệu thật để làm trống.
-5. Chép ảnh từ thư mục xuất uploads vào fillico-private/uploads, giữ nguyên tên. Không chép tệp admin-credentials.txt, SQLite hay backup vào hosting public. Ảnh `/images/...` đã có trong bản build từ GitHub; nếu bạn có ảnh images riêng chưa commit, chép đúng ảnh đó sau khi đối chiếu.
-6. Nhập verify.sql qua phpMyAdmin trước khi đổi mật khẩu hoặc phát sinh đơn. Cả count_ok và content_ok của đủ 9 bảng phải bằng 1. SQL đối chiếu hash nội dung tất cả cột từng dòng; sessions có số đích bằng 0. Nếu có PHP CLI và kết nối database được phép ở máy phát triển, dùng thêm `php tools/verify-import.php /duong-dan/config.php /duong-dan/manifest.json` để kiểm tra từng dòng và checksum ảnh. Không cần CLI trên hosting. Ảnh được kiểm tra thêm bằng số lượng/tên và mở URL cũ trên staging nếu không dùng CLI.
-7. Đặt lại mật khẩu các tài khoản scrypt theo mục 5. Không thể dùng mật khẩu cũ ngay trên PHP. Sau reset, phép đối chiếu users/audit sẽ khác vì thay đổi này là chủ đích; lưu kết quả verify trước đó.
-8. Xóa setup.php, giữ setup_token rỗng. Đăng nhập staging, kiểm tra token tra cứu cũ, phiếu, ảnh, đơn, tồn kho, cấu hình và quyền nhân viên. Giữ bản Node cùng snapshot để quay lại. Chỉ quyết định chuyển production sau khi bạn duyệt và có cửa sổ bảo trì; công việc bàn giao này chưa sửa DNS hay triển khai production.
-9. Khi đã có đơn mới trên PHP, không quay về snapshot Node cũ một cách trực tiếp vì sẽ mất đơn/tồn thay đổi. Dừng ghi, sao lưu cả hai và lập kế hoạch đối soát/di chuyển các thay đổi trước khi quay lại.
-
-## 5. Đặt lại mật khẩu tài khoản cũ
-
-Trong phpMyAdmin đọc users để lấy đúng id và email cần reset. Trên máy cá nhân có PHP 8.3+ hỗ trợ Argon2id chạy:
-
-```bash
-php tools/reset-password.php MA_ID_NGUOI_DUNG /thu-muc-rieng/reset-owner.sql
-```
-
-Công cụ hỏi mật khẩu trên terminal và ẩn ký tự; không đưa mật khẩu vào tham số lệnh. Nó chỉ tạo SQL có hash Argon2id, không kết nối database, không lưu mật khẩu rõ. Trên Windows dùng PHP CLI phù hợp hoặc terminal Linux/WSL; nếu không thể ẩn đầu vào, công cụ từ chối tương tác thay vì hiện mật khẩu. Không upload công cụ lên URL công khai.
-
-Nhập SQL tạo ra vào đúng database qua phpMyAdmin, xác nhận id/email trả về đúng tài khoản, rồi đăng nhập thử. SQL xóa các phiên của tài khoản và ghi audit. Tạo file reset riêng cho từng người; thông báo mật khẩu tạm qua kênh riêng của bạn, yêu cầu nhân viên đổi mật khẩu trong quản trị. Xóa tệp reset sau khi dùng và giữ kiểm soát truy cập bản sao lưu. Công cụ có thể dùng cho khôi phục tài khoản về sau; đây là thao tác quản trị dữ liệu, luôn sao lưu trước.
-
-## 6. Nếu không đặt được thư mục riêng ngoài public_html
-
-Ưu tiên nhờ P.A cho phép thư mục cùng cấp như cấu trúc chuẩn; việc không đổi được document root thường vẫn cho tạo thư mục ngoài public_html. Nếu thực sự không được:
-
-1. Đặt fillico-private trong public_html. Giữ nguyên `fillico-private/.htaccess` chứa `Require all denied` và luật chặn ở `.htaccess` gốc.
-2. Giữ nguyên index.php và setup.php. Controller tự chọn vị trí chứa config.php; uploads_dir trong config dùng __DIR__, nên nằm trong thư mục bị chặn.
-3. Trên staging, mở `/fillico-private/config.php`, `/fillico-private/src/Support.php`, `/fillico-private/migrations/001_initial.sql` và `/fillico-private/uploads/...`: tất cả phải trả 403 hoặc 404, tuyệt đối không trả nội dung tệp. Kiểm tra `/api/store` và ảnh `/uploads/TÊN-ẢNH-CŨ.png` vẫn hoạt động.
-4. Chưa mở bán nếu cơ chế deny không có hiệu lực. Không bỏ .htaccess để chữa lỗi 500. Phương án này đã được kiểm thử trên Apache; LiteSpeed và cấu hình P.A vẫn phải kiểm tra tại hosting.
-
-## 7. Kiểm tra trước mở bán
-
-Mở trang chủ, sản phẩm, giỏ hàng trên điện thoại và máy tính; reload `/admin` và trang sản phẩm sâu. Đặt COD và chuyển khoản với dữ liệu thử đã được bạn cho phép. Đối chiếu tiền/phí/tồn, gửi lại yêu cầu, hủy đơn và kiểm tra hoàn tồn. Đăng nhập nhân viên để xác nhận không xem dashboard/sản phẩm/cấu hình; thử đổi mật khẩu và thu hồi phiên. Kiểm tra phiếu in có dấu tiếng Việt. Tra cứu mã đơn không token phải thất bại và không lộ dữ liệu. Upload thử ảnh hợp lệ, file giả và file >5 MiB. Kiểm tra cookie Secure/HttpOnly/SameSite=Lax bằng browser DevTools trên HTTPS. Xóa dữ liệu thử theo kế hoạch riêng, không xóa nhầm đơn thật.
-
-## 8. Cập nhật phiên bản mà không mất dữ liệu
-
-1. Bật bảo trì/tạm dừng ghi, sao lưu database + uploads + config và giữ bản code hiện tại ở máy riêng.
-2. Dùng máy build tạo gói phiên bản mới vào một thư mục mới. Chạy kiểm thử trên database staging/bản sao trước. Không chạy seed hoặc installer mỗi lần cập nhật.
-3. Upload assets/images và PHP src mới, rồi chuyển index.html/index.php/.htaccess cuối cùng trong cửa sổ bảo trì. Giữ assets phiên bản trước ít nhất qua thời gian cache để tab cũ không lỗi. Có thể dùng File Manager đổi tên thư mục release nếu panel hỗ trợ, nhưng không di chuyển nhầm private config/uploads.
-4. Không ghi đè config.php, uploads/, setup.lock hoặc database. Không tải lại setup.php. Gói không chứa config.php hay dữ liệu thật. Với images do bạn tự thay, đối chiếu trước khi ghi đè đường dẫn trùng.
-5. Nếu phiên bản có migration mới, đọc hướng dẫn riêng, backup và chạy file mới một lần; không xóa bảng. Bản đầu chỉ có 001, nhập lại đã được kiểm thử không xóa dữ liệu.
-6. Kiểm tra cấu hình OPcache và làm mới theo panel/hỗ trợ hosting; kiểm tra số bản dựng/luồng chức năng rồi mới mở ghi. Không đổi config/database chỉ để sửa cache code.
-
-## 9. Sao lưu và khôi phục qua panel
-
-Sao lưu: tạm dừng ghi; phpMyAdmin → Export → Custom → chọn tất cả bảng, SQL, cấu trúc + dữ liệu, giữ primary/foreign keys/auto_increment, UTF-8. Với InnoDB chọn transaction nếu panel hỗ trợ. Tải database về máy riêng. File Manager/FTP tải fillico-private/uploads, config.php, setup.lock và ghi lại phiên bản code. Không lưu file backup ZIP/SQL trong public_html. Mã hóa và giới hạn người truy cập vì có thông tin khách/phiên/token. Thử khôi phục định kỳ, không chỉ kiểm tra file tồn tại.
-
-Khôi phục diễn tập: tạo database mới, import SQL backup, khôi phục đúng uploads và phiên bản code vào staging riêng, sửa config staging với database mới/origin staging. Kiểm tra số bản ghi, đơn mới nhất, tổng tiền, tồn, phiếu, URL ảnh và quyền. Snapshot này có thể chứa phiên đã đăng nhập: trên bản clone hoặc khi nghi lộ thông tin, xóa bảng sessions bằng DELETE trong phpMyAdmin để buộc đăng nhập lại. Khi khôi phục production, dừng ghi và duyệt phạm vi dữ liệu sẽ quay lui; không import chồng backup lên database đang bán. Giữ bản trước khôi phục để đối soát đơn phát sinh.
-
-Ứng dụng không tự gửi email/SMS, không kết nối cổng thanh toán hoặc giao vận; đó cũng là phạm vi bản Node gốc. Chuyển khoản vẫn phải đối soát thủ công.
-
-## 10. Dành cho người phát triển
-
-```bash
-npm ci
-npm test                 # Bản tham chiếu Node/SQLite
-npm run build
-npm run test:e2e         # Browser trên Node
-npm run test:php:setup   # Docker ở máy phát triển, tạo môi trường riêng
-npm run test:php         # API + InnoDB + migration + Chromium trên PHP
-npm run build:hosting    # Tạo work/hosting, phải chưa tồn tại
-```
-
-Máy kiểm thử cần Docker, Node >=24, Chromium (đường dẫn PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH nếu khác /usr/bin/chromium). Dockerfile và script setup chỉ dành cho phát triển. Script dùng tên fillico-db/fillico-web, database fillico_test/fillico_migration và mật khẩu cố định cho dữ liệu giả; tuyệt đối không dùng cấu hình test trên hosting. Nếu môi trường test cũ tồn tại, kiểm tra đúng container thử rồi dừng/xóa chúng và dùng thư mục sandbox mới; script không tự xóa container có sẵn. Không chạy hai bộ test PHP đồng thời trên cùng database thử.
-
-Build hosting chỉ sao chép frontend build và PHP runtime không có dependency Composer. Code Node trong server/ được giữ nguyên để tham chiếu/quay lại; test có adapter để chạy cùng assertion trên PHP. Xem KHAO-SAT.md, CHECKLIST.md, KIEM-THU.md và KIEN-TRUC.md trước khi duyệt chuyển đổi.
-
-## Audit fixes: deployment and updates
-
-Controllers now discover exactly one retained config.php at either sibling fillico-private/config.php or public_html/fillico-private/config.php. Do not edit index.php/setup.php for layout selection. If both contain config.php, initialization fails closed: select the intended deployment explicitly by keeping only its active configuration (back up the other outside the web tree). Keep deny rules for the fallback directory; verify them on P.A LiteSpeed before opening traffic.
-
-PHP GD with PNG, JPEG and WebP decoding is now required, in addition to the existing extensions. The installer checks it. Uploads remain private and existing stored images are preserved; new uploads must pass full decoding. The memory limit may reject very large images even within the pixel cap.
-
-During updates copy frontend build, public controllers/.htaccess and private src. Preserve config.php, uploads, setup.lock and all database tables; omit setup.php on an established installation. Controller paths no longer require a per-update modification. Both layouts have a regression test that reapplies the complete code release and checks unchanged settings and image bytes. Never use a panel's "replace whole directory" option that deletes retained files.
-
-Passwords must have 12–200 UTF-16 code units and no leading/trailing whitespace, including NBSP U+00A0 and BOM. Login/current-password validation permits older short credentials but uses the same whitespace policy. Offline reset uses the same Password.php policy: keep guides/Password.php beside guides/reset-password.php when running the packaged helper locally.
-
-Checkout stores only the pending request in per-tab sessionStorage for at most 30 minutes while the application runs. The same key/body are replayed after network/5xx errors and reload. Success or definitive 4xx rejection removes it (408/429 remain pending). After expiry the payload is removed and a key-only warning remains: check the earlier order with the shop before explicitly starting a new checkout. No customer payload is written to localStorage by this mechanism.
-
-Release builds: commit all source changes first, run npm run build, then npm run build:hosting with a new output directory. BUILD.json includes the exact source commit, clean/dirty status and SHA-256 of source files. --allow-dirty is for development only; never identify such a package by commit alone. Keep the ZIP checksum with the deployment record. Build and migration tools run on the development machine, without requiring Node/SSH on hosting.
+Chưa xác minh P.A Việt Nam/hosting thật trong lần này. Cần staging để kiểm tra extensions/database/rewrite/deny/quyền/HTTPS và hạn mức thực tế.

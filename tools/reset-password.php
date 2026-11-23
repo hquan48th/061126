@@ -4,7 +4,7 @@ declare(strict_types=1);
 if(PHP_SAPI!=='cli'){http_response_code(404);exit;}
 if($argc!==3){fwrite(STDERR,"Usage: php reset-password.php user-id private-output.sql\nPassword: type on hidden terminal input (12–200 UTF-8 characters).\n");exit(1);}
 if(!in_array('argon2id',password_algos(),true)){fwrite(STDERR,"PHP Argon2id required.\n");exit(1);}
-require is_file(__DIR__.'/Password.php')?__DIR__.'/Password.php':dirname(__DIR__).'/php/src/Password.php';
+require is_file(__DIR__.'/Password.php')?__DIR__.'/Password.php':dirname(__DIR__).'/fillico-private/src/Password.php';
 $id=$argv[1];$file=$argv[2];
 if($id===''||strlen($id)>400||file_exists($file)){fwrite(STDERR,"Invalid ID or output exists.\n");exit(1);}
 // Read from stdin, never argv/env. Pipes are allowed for controlled local automation.

@@ -1,0 +1,398 @@
+[
+  {
+    "id": "p1",
+    "slug": "ban-chai-tre",
+    "name": "Bàn chải tre tự nhiên",
+    "category": "Chăm sóc cá nhân",
+    "description": "Bàn chải cán tre với đầu lông mềm, đóng gói riêng trong bao giấy. Lựa chọn chỉn chu cho phòng khách sạn, homestay và những chuyến đi.",
+    "image": "/images/product-toothbrush.svg",
+    "images": [
+      "/images/product-toothbrush.svg"
+    ],
+    "badge": "Bán chạy",
+    "featured": true,
+    "active": true,
+    "variants": [
+      {
+        "id": "v1-1",
+        "name": "Bộ 20 chiếc",
+        "sku": "FL-001-1",
+        "price": 90000,
+        "originalPrice": 110000,
+        "stock": 24
+      },
+      {
+        "id": "v1-2",
+        "name": "Bộ 50 chiếc",
+        "sku": "FL-001-2",
+        "price": 122000,
+        "originalPrice": 149000,
+        "stock": 32
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p2",
+    "slug": "khan-tam-cotton",
+    "name": "Khăn tắm cotton cao cấp",
+    "category": "Khăn & vải",
+    "description": "Sợi cotton mềm mại, thấm hút tốt và dịu nhẹ với làn da. Đường may chắc chắn cùng sắc màu trung tính dễ phối với mọi không gian.",
+    "image": "/images/product-towel.svg",
+    "images": [
+      "/images/product-towel.svg"
+    ],
+    "badge": "Yêu thích",
+    "featured": true,
+    "active": true,
+    "variants": [
+      {
+        "id": "v2-1",
+        "name": "Trắng ngà · 70 × 140 cm",
+        "sku": "FL-002-1",
+        "price": 159000,
+        "originalPrice": 199000,
+        "stock": 27
+      },
+      {
+        "id": "v2-2",
+        "name": "Be · 70 × 140 cm",
+        "sku": "FL-002-2",
+        "price": 215000,
+        "originalPrice": 269000,
+        "stock": 35
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p3",
+    "slug": "bo-dau-goi-sua-tam",
+    "name": "Bộ dầu gội & sữa tắm Botanica",
+    "category": "Chăm sóc cá nhân",
+    "description": "Hương thảo mộc nhẹ nhàng mang đến phút thư giãn sau ngày dài. Thiết kế chai tối giản, phù hợp phòng tắm khách sạn và căn hộ.",
+    "image": "/images/product-bodywash.svg",
+    "images": [
+      "/images/product-bodywash.svg"
+    ],
+    "badge": "Mới",
+    "featured": true,
+    "active": true,
+    "variants": [
+      {
+        "id": "v3-1",
+        "name": "Bộ 2 chai · 300 ml",
+        "sku": "FL-003-1",
+        "price": 245000,
+        "originalPrice": 290000,
+        "stock": 30
+      },
+      {
+        "id": "v3-2",
+        "name": "Bộ 2 chai · 500 ml",
+        "sku": "FL-003-2",
+        "price": 331000,
+        "originalPrice": 392000,
+        "stock": 38
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p4",
+    "slug": "binh-nhan-su",
+    "name": "Bình nhấn sứ tối giản",
+    "category": "Phụ kiện phòng tắm",
+    "description": "Bình sứ tráng men với vòi nhấn tiện dụng cho nước rửa tay, dầu gội hoặc sữa tắm. Bề mặt dễ vệ sinh và thiết kế gọn gàng.",
+    "image": "/images/product-dispenser.svg",
+    "images": [
+      "/images/product-dispenser.svg"
+    ],
+    "badge": "",
+    "featured": true,
+    "active": true,
+    "variants": [
+      {
+        "id": "v4-1",
+        "name": "Trắng kem · 350 ml",
+        "sku": "FL-004-1",
+        "price": 129000,
+        "originalPrice": 159000,
+        "stock": 33
+      },
+      {
+        "id": "v4-2",
+        "name": "Xanh olive · 350 ml",
+        "sku": "FL-004-2",
+        "price": 174000,
+        "originalPrice": 215000,
+        "stock": 41
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p5",
+    "slug": "dep-di-trong-phong",
+    "name": "Dép vải đi trong phòng",
+    "category": "Tiện nghi phòng",
+    "description": "Dép mềm, nhẹ với đế chống trượt. Đóng gói theo đôi, dễ sắp xếp cho phòng lưu trú và phòng spa.",
+    "image": "/images/product-slippers.svg",
+    "images": [
+      "/images/product-slippers.svg"
+    ],
+    "badge": "",
+    "featured": false,
+    "active": true,
+    "variants": [
+      {
+        "id": "v5-1",
+        "name": "Trắng ngà · Size M",
+        "sku": "FL-005-1",
+        "price": 35000,
+        "originalPrice": 45000,
+        "stock": 36
+      },
+      {
+        "id": "v5-2",
+        "name": "Trắng ngà · Size L",
+        "sku": "FL-005-2",
+        "price": 47000,
+        "originalPrice": 61000,
+        "stock": 44
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p6",
+    "slug": "nuoc-lau-san",
+    "name": "Nước lau sàn hương thảo mộc",
+    "category": "Vệ sinh không gian",
+    "description": "Làm sạch sàn và lưu lại hương thơm nhẹ. Can dung tích lớn phù hợp nhu cầu sử dụng thường xuyên tại khách sạn và nhà ở.",
+    "image": "/images/product-floor.svg",
+    "images": [
+      "/images/product-floor.svg"
+    ],
+    "badge": "Tiết kiệm",
+    "featured": false,
+    "active": true,
+    "variants": [
+      {
+        "id": "v6-1",
+        "name": "Can 3.8 lít",
+        "sku": "FL-006-1",
+        "price": 120000,
+        "originalPrice": 150000,
+        "stock": 39
+      },
+      {
+        "id": "v6-2",
+        "name": "Can 5 lít",
+        "sku": "FL-006-2",
+        "price": 162000,
+        "originalPrice": 203000,
+        "stock": 47
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p7",
+    "slug": "bo-amenities",
+    "name": "Bộ amenities Essential",
+    "category": "Chăm sóc cá nhân",
+    "description": "Bộ vật dụng cá nhân gồm bàn chải, lược, mũ tắm và tăm bông. Bao bì kraft đồng bộ giúp phòng nghỉ thêm gọn gàng, chỉn chu.",
+    "image": "/images/product-amenities.svg",
+    "images": [
+      "/images/product-amenities.svg"
+    ],
+    "badge": "",
+    "featured": false,
+    "active": true,
+    "variants": [
+      {
+        "id": "v7-1",
+        "name": "Hộp 10 bộ",
+        "sku": "FL-007-1",
+        "price": 185000,
+        "originalPrice": 220000,
+        "stock": 42
+      },
+      {
+        "id": "v7-2",
+        "name": "Hộp 25 bộ",
+        "sku": "FL-007-2",
+        "price": 250000,
+        "originalPrice": 297000,
+        "stock": 50
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p8",
+    "slug": "khan-mat-cotton",
+    "name": "Khăn mặt cotton mềm mại",
+    "category": "Khăn & vải",
+    "description": "Khăn mặt cotton thấm hút nhanh, mềm mại. Kích thước nhỏ gọn dành cho phòng tắm, phòng gym hoặc spa.",
+    "image": "/images/product-towel-small.svg",
+    "images": [
+      "/images/product-towel-small.svg"
+    ],
+    "badge": "",
+    "featured": false,
+    "active": true,
+    "variants": [
+      {
+        "id": "v8-1",
+        "name": "Trắng · 30 × 50 cm",
+        "sku": "FL-008-1",
+        "price": 45000,
+        "originalPrice": 55000,
+        "stock": 45
+      },
+      {
+        "id": "v8-2",
+        "name": "Be · 30 × 50 cm",
+        "sku": "FL-008-2",
+        "price": 61000,
+        "originalPrice": 74000,
+        "stock": 53
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p9",
+    "slug": "khay-go-phong-tam",
+    "name": "Khay gỗ phòng tắm",
+    "category": "Phụ kiện phòng tắm",
+    "description": "Khay gỗ tông ấm để sắp xếp đồ dùng cá nhân, chai sữa tắm và khăn tay. Lau khô sau khi dùng để bảo quản bề mặt.",
+    "image": "/images/product-tray.svg",
+    "images": [
+      "/images/product-tray.svg"
+    ],
+    "badge": "Mới",
+    "featured": false,
+    "active": true,
+    "variants": [
+      {
+        "id": "v9-1",
+        "name": "Gỗ sáng · 25 cm",
+        "sku": "FL-009-1",
+        "price": 169000,
+        "originalPrice": 199000,
+        "stock": 48
+      },
+      {
+        "id": "v9-2",
+        "name": "Gỗ sáng · 35 cm",
+        "sku": "FL-009-2",
+        "price": 228000,
+        "originalPrice": 269000,
+        "stock": 56
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p10",
+    "slug": "nuoc-rua-tay",
+    "name": "Nước rửa tay Botanical",
+    "category": "Chăm sóc cá nhân",
+    "description": "Nước rửa tay hương nhẹ, vòi nhấn tiện dụng. Phù hợp khu vực lễ tân, bồn rửa và phòng tắm.",
+    "image": "/images/product-bottle.svg",
+    "images": [
+      "/images/product-bottle.svg"
+    ],
+    "badge": "",
+    "featured": false,
+    "active": true,
+    "variants": [
+      {
+        "id": "v10-1",
+        "name": "Trà xanh · 300 ml",
+        "sku": "FL-010-1",
+        "price": 89000,
+        "originalPrice": 109000,
+        "stock": 51
+      },
+      {
+        "id": "v10-2",
+        "name": "Cam bergamot · 300 ml",
+        "sku": "FL-010-2",
+        "price": 120000,
+        "originalPrice": 147000,
+        "stock": 59
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p11",
+    "slug": "ao-choang-tam",
+    "name": "Áo choàng tắm cotton",
+    "category": "Khăn & vải",
+    "description": "Áo choàng cotton êm ái với dây buộc eo và túi tiện dụng. Món đồ nâng niu cảm giác nghỉ ngơi tại khách sạn hoặc ở nhà.",
+    "image": "/images/product-robe.svg",
+    "images": [
+      "/images/product-robe.svg"
+    ],
+    "badge": "",
+    "featured": false,
+    "active": true,
+    "variants": [
+      {
+        "id": "v11-1",
+        "name": "Trắng ngà · M",
+        "sku": "FL-011-1",
+        "price": 349000,
+        "originalPrice": 420000,
+        "stock": 0
+      },
+      {
+        "id": "v11-2",
+        "name": "Trắng ngà · L",
+        "sku": "FL-011-2",
+        "price": 471000,
+        "originalPrice": 567000,
+        "stock": 0
+      }
+    ],
+    "revision": 1
+  },
+  {
+    "id": "p12",
+    "slug": "tui-giat-vai",
+    "name": "Túi giặt vải khách sạn",
+    "category": "Tiện nghi phòng",
+    "description": "Túi vải có dây rút, thuận tiện thu gom quần áo giặt. Có thể tái sử dụng và gấp gọn khi không dùng.",
+    "image": "/images/product-laundry.svg",
+    "images": [
+      "/images/product-laundry.svg"
+    ],
+    "badge": "",
+    "featured": false,
+    "active": true,
+    "variants": [
+      {
+        "id": "v12-1",
+        "name": "Tự nhiên · 40 × 50 cm",
+        "sku": "FL-012-1",
+        "price": 39000,
+        "originalPrice": 49000,
+        "stock": 57
+      },
+      {
+        "id": "v12-2",
+        "name": "Tự nhiên · 50 × 60 cm",
+        "sku": "FL-012-2",
+        "price": 53000,
+        "originalPrice": 66000,
+        "stock": 65
+      }
+    ],
+    "revision": 1
+  }
+]

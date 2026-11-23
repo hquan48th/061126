@@ -2,7 +2,7 @@
 declare(strict_types=1);
 if(PHP_SAPI!=='cli'){http_response_code(404);exit;}
 if($argc!==3){fwrite(STDERR,"php verify-import.php /private/config.php /private/manifest.json\n");exit(1);}
-require __DIR__.'/../php/src/bootstrap.php';
+require __DIR__.'/../fillico-private/src/bootstrap.php';
 try{
     $c=require $argv[1];$m=\Fillico\decode(file_get_contents($argv[2]));$s=new \Fillico\Store($c);$allowed=['products','variants','settings','orders','order_receipts','idempotency','users','sessions','audit'];
     if(($m['format']??null)!==1||array_keys($m['tables'])!==$allowed)throw new RuntimeException('Invalid manifest');

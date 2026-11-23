@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS customers (
+ id VARCHAR(100) PRIMARY KEY,
+ email VARCHAR(254) NOT NULL UNIQUE,
+ name VARCHAR(100) NOT NULL,
+ password_hash VARCHAR(255) NOT NULL,
+ cart LONGTEXT NOT NULL CHECK(JSON_VALID(cart))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE TABLE IF NOT EXISTS customer_sessions (
+ token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+ customer_id VARCHAR(100) NOT NULL,
+ expires BIGINT NOT NULL,
+ INDEX customer_sessions_expiry(expires),
+ FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT IGNORE INTO schema_migrations VALUES(2,'2026-11-21T00:00:00.000Z');

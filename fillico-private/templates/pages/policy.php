@@ -1,0 +1,1 @@
+<?php use function Fillico\h; ?><div class="policy-content php-narrow"><h1><?= h($policyNames[$policy]) ?></h1><p><?= nl2br(h(((array)($settings['policies']??[]))[$policy]??'Nội dung đang được cửa hàng cập nhật. Vui lòng liên hệ cửa hàng trước khi đặt hàng.')) ?></p><a class="text-link" href="/san-pham">Tiếp tục mua sắm →</a></div>
